@@ -6,18 +6,24 @@ use App\Entity\User;
 use App\Message\AddUser;
 use App\Message\UserStatus;
 use App\Repository\UserRepository;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Messenger\MessageBusInterface;
 
 class UserService
 {
+
+    private FilesystemAdapter $cache;
+
     public function __construct(
         private RequestStack        $requestStack,
         private MessageBusInterface $bus,
         private UserRepository      $userRepository
     )
-    { }
+    {
+        $this->cache = new FilesystemAdapter();
+    }
 
     public function addUser(InputInterface $input = null): void
     {
@@ -76,6 +82,12 @@ class UserService
         $this->userRepository->save($this->createUserEntityFromMessage($addUser));
     }
 
+    public function saveUserStatus(UserStatus $userStatus) : void {
+        $user = $this->userRepository->find($userStatus->getId());
+        $user->setActive($userStatus->isActive());
+        $this->userRepository->save($user);
+    }
+
     public function changeUserStatus(int $id, bool $active)
     {
         $this->bus->dispatch(new UserStatus($id, $active));
@@ -83,11 +95,30 @@ class UserService
 
     public function findUser(int $id): User
     {
-        return $this->userRepository->find($id);
+        $cachedUser = $this->cache->getItem($this->getCacheKey($id));
+        if (!$cachedUser->isHit()) {
+            $user = $this->userRepository->find($id);
+            $cachedUser->set($user);
+            $this->cache->save($cachedUser);
+        } else {
+            $user = $cachedUser->get();
+        }
+
+        return $user;
     }
 
     public function findUsers() : array {
 
         return $this->userRepository->findAll();
+    }
+
+    private function getCacheKey(int $userId = null): string
+    {
+        $chunks[] = 'user';
+        if ($userId) {
+            $chunks[] = $userId;
+        }
+
+        return join('_', $chunks);
     }
 }

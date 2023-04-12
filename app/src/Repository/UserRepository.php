@@ -23,7 +23,10 @@ class UserRepository extends ServiceEntityRepository
 
     public function save(User $entity, bool $flush = true): void
     {
-        $this->getEntityManager()->persist($entity);
+        if (!$this->getEntityManager()->contains($entity)) {
+            $this->getEntityManager()->persist($entity);
+        }
+
         if ($flush) {
             $this->getEntityManager()->flush();
         }
