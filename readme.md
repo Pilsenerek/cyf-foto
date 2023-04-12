@@ -8,5 +8,15 @@ Ensure that you have `docker`  and `docker-compose`
 4. Set Messenger `docker-compose run --rm web php bin/console messenger:setup-transports`.
 5. Run containers & services `docker-compose up -d`.
 
+# User commands list
+
+`docker-compose run --rm web php bin/console | grep user:`
+
 # Run tests
 `docker-compose run --rm web php bin/phpunit`
+
+#Tips & tricks
+
+It's more handy to run command inside docker container, to go in run:
+
+`docker-compose exec web bash`

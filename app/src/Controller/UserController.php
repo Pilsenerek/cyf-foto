@@ -2,63 +2,47 @@
 
 namespace App\Controller;
 
-use App\Message\AddProduct;
-use App\Message\UserStatus;
-use App\Repository\ProductRepository;
+use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
-use App\Message\AddUser;
-use App\Repository\UserRepository;
-use Doctrine\ORM\EntityManagerInterface;
-use JMS\Serializer\SerializerInterface;
-use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 #[Route('/api', name: 'api')]
 class UserController extends AbstractController
 {
 
     #[Route('/user', name: 'user_index', methods: 'GET')]
-    public function index(UserRepository $userRepository): JsonResponse
+    public function index(UserService $userService): JsonResponse
     {
-        return $this->json($userRepository->findAll());
+        return $this->json($userService->findUsers());
     }
 
     #[Route('/user/{id}', name: 'user_detail', methods: 'GET')]
-    public function detail($id, UserRepository $userRepository): JsonResponse
+    public function detail($id, UserService $userService): JsonResponse
     {
-        return $this->json($userRepository->findOneBy(['id' => $id]));
+        return $this->json($userService->findUser($id));
     }
 
     #[Route('/user', name: 'user_create', methods: 'POST')]
-    public function create(Request $request, MessageBusInterface $bus): JsonResponse
+    public function create(UserService $userService): JsonResponse
     {
-        //@todo use normalizer instead
-        $bus->dispatch(new AddUser(
-            $request->get('firstName'),
-            $request->get('lastName'),
-            $request->get('email'),
-            $request->get('address'),
-            $request->get('active', true),
-            $request->get('nip')
-        ));
+        $userService->addUser();
 
         return $this->json([], 202);
     }
 
     #[Route('/user/{id}/activate', name: 'user_activate', methods: 'POST')]
-    public function activate($id, MessageBusInterface $bus): JsonResponse
+    public function activate($id, UserService $userService): JsonResponse
     {
-        $bus->dispatch(new UserStatus($id, true));
+        $userService->changeUserStatus($id, true);
 
         return $this->json([], 202);
     }
 
     #[Route('/user/{id}/deactivate', name: 'user_deactivate', methods: 'POST')]
-    public function deactivate($id, MessageBusInterface $bus): JsonResponse
+    public function deactivate($id, UserService $userService): JsonResponse
     {
-        $bus->dispatch(new UserStatus($id, false));
+        $userService->changeUserStatus($id, false);
 
         return $this->json([], 202);
     }
