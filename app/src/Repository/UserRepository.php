@@ -31,4 +31,11 @@ class UserRepository extends ServiceEntityRepository implements \App\Domain\User
             $this->getEntityManager()->flush();
         }
     }
+
+    public function changeStatus(int $id, bool $status)
+    {
+        $user = $this->find($id);
+        $user->setActive($status);
+        $this->getEntityManager()->flush();
+    }
 }

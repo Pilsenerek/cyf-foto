@@ -2,13 +2,14 @@
 
 namespace App\Command;
 
-use App\Service\UserService;
+use App\Message\UserStatus;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 #[AsCommand(
     name: 'user:activate',
@@ -16,7 +17,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class UserActivateCommand extends Command
 {
-    public function __construct(private UserService $userService)
+    public function __construct(private MessageBusInterface $bus)
     {
         parent::__construct();
     }
@@ -31,7 +32,7 @@ class UserActivateCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $this->userService->changeUserStatus($input->getArgument('id'), true);
+        $this->bus->dispatch(new UserStatus($input->getArgument('id'), true));
         $io->success('User activating is dispatched!');
 
         return Command::SUCCESS;
