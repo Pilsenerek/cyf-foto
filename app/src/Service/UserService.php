@@ -32,11 +32,12 @@ class UserService
         } else {
             $addUser = $this->createAddUserMessageFromRequest();
         }
-
+        $this->cache->clear();
         $this->bus->dispatch($addUser);
     }
 
-    private function createAddUserMessageFromRequest() : AddUser {
+    private function createAddUserMessageFromRequest(): AddUser
+    {
         $request = $this->requestStack->getCurrentRequest();
         //@todo use normalizer instead
         $addUser = new AddUser(
@@ -51,7 +52,8 @@ class UserService
         return $addUser;
     }
 
-    private function createAddUserMessageFromInput(InputInterface $input) : AddUser {
+    private function createAddUserMessageFromInput(InputInterface $input): AddUser
+    {
         //@todo use normalizer instead
         $addUser = new AddUser(
             $input->getArgument('firstName'),
@@ -65,7 +67,8 @@ class UserService
         return $addUser;
     }
 
-    public function createUserEntityFromMessage(AddUser $addUser) : User {
+    private function createUserEntityFromMessage(AddUser $addUser): \App\Domain\Entity\User
+    {
         //@todo use normalizer instead
         $newUser = new User();
         $newUser->setActive($addUser->isActive());
@@ -78,11 +81,13 @@ class UserService
         return $newUser;
     }
 
-    public function saveUser(AddUser $addUser) : void {
+    public function saveUser(AddUser $addUser): void
+    {
         $this->userRepository->save($this->createUserEntityFromMessage($addUser));
     }
 
-    public function saveUserStatus(UserStatus $userStatus) : void {
+    public function saveUserStatus(UserStatus $userStatus): void
+    {
         $user = $this->userRepository->find($userStatus->getId());
         $user->setActive($userStatus->isActive());
         $this->userRepository->save($user);
@@ -90,10 +95,11 @@ class UserService
 
     public function changeUserStatus(int $id, bool $active)
     {
+        $this->cache->clear();
         $this->bus->dispatch(new UserStatus($id, $active));
     }
 
-    public function findUser(int $id): User
+    public function findUser(int $id): \App\Domain\Entity\User
     {
         $cachedUser = $this->cache->getItem($this->getCacheKey($id));
         if (!$cachedUser->isHit()) {
@@ -107,9 +113,18 @@ class UserService
         return $user;
     }
 
-    public function findUsers() : array {
+    public function findUsers(): array
+    {
+        $cachedUsers = $this->cache->getItem($this->getCacheKey());
+        if (!$cachedUsers->isHit()) {
+            $users = $this->userRepository->findAll();
+            $cachedUsers->set($users);
+            $this->cache->save($cachedUsers);
+        } else {
+            $users = $cachedUsers->get();
+        }
 
-        return $this->userRepository->findAll();
+        return $users;
     }
 
     private function getCacheKey(int $userId = null): string

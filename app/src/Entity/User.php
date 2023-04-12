@@ -6,7 +6,7 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+class User implements \App\Domain\Entity\User
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -31,12 +31,12 @@ class User
     #[ORM\Column]
     private bool $active = true;
 
-    public function getId(): ?int
+    public function getId(): int
     {
         return $this->id;
     }
 
-    public function getFirstName(): ?string
+    public function getFirstName(): string
     {
         return $this->firstName;
     }
@@ -48,7 +48,7 @@ class User
         return $this;
     }
 
-    public function getLastName(): ?string
+    public function getLastName(): string
     {
         return $this->lastName;
     }
@@ -60,7 +60,7 @@ class User
         return $this;
     }
 
-    public function getEmail(): ?string
+    public function getEmail(): string
     {
         return $this->email;
     }
@@ -84,7 +84,7 @@ class User
         return $this;
     }
 
-    public function getAddress(): ?string
+    public function getAddress(): string
     {
         return $this->address;
     }
